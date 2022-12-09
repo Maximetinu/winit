@@ -1,7 +1,7 @@
 use crate::{
     dpi::{PhysicalPosition, Size},
-    event::ModifiersState,
     icon::Icon,
+    keyboard::ModifiersState,
     platform_impl::platform::{event_loop, util},
     window::{CursorIcon, Fullscreen, Theme, WindowAttributes},
 };
@@ -41,6 +41,7 @@ pub struct WindowState {
     pub current_theme: Theme,
     pub preferred_theme: Option<Theme>,
     pub high_surrogate: Option<u16>,
+
     pub window_flags: WindowFlags,
 
     pub ime_state: ImeState,
