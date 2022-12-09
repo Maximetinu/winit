@@ -4,8 +4,9 @@ use log::LevelFilter;
 use simple_logger::SimpleLogger;
 use winit::{
     dpi::PhysicalPosition,
-    event::{ElementState, Event, Ime, VirtualKeyCode, WindowEvent},
+    event::{ElementState, Event, Ime, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
+    keyboard::KeyCode,
     window::WindowBuilder,
 };
 
@@ -74,20 +75,12 @@ fn main() {
                 }
             }
             Event::WindowEvent {
-                event: WindowEvent::ReceivedCharacter(ch),
+                event: WindowEvent::KeyboardInput { event, .. },
                 ..
             } => {
-                println!("ch: {:?}", ch);
-            }
-            Event::WindowEvent {
-                event: WindowEvent::KeyboardInput { input, .. },
-                ..
-            } => {
-                println!("key: {:?}", input);
+                println!("key: {:?}", event);
 
-                if input.state == ElementState::Pressed
-                    && input.virtual_keycode == Some(VirtualKeyCode::F2)
-                {
+                if event.state == ElementState::Pressed && event.physical_key == KeyCode::F2 {
                     ime_allowed = !ime_allowed;
                     window.set_ime_allowed(ime_allowed);
                     println!("\nIME: {}\n", ime_allowed);
