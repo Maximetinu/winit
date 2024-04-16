@@ -7,7 +7,15 @@ use winit::{
     window::{Fullscreen, WindowBuilder},
 };
 
+extern crate console_error_panic_hook;
+use std::panic;
+
 pub fn main() -> Result<(), impl std::error::Error> {
+    use winit::platform::web::WindowExtWebSys;
+
+    // not strictly needed, but useful to see the panic in the console
+    panic::set_hook(Box::new(console_error_panic_hook::hook));
+
     let event_loop = EventLoop::new().unwrap();
 
     let builder = WindowBuilder::new().with_title("A fantastic window!");
@@ -50,6 +58,24 @@ pub fn main() -> Result<(), impl std::error::Error> {
                     window.set_fullscreen(None);
                 } else {
                     window.set_fullscreen(Some(Fullscreen::Borderless(None)));
+                }
+            }
+            Event::WindowEvent {
+                event: WindowEvent::RedrawRequested,
+                window_id,
+            } if window_id == window.id() => {
+                // Panicking in user code, during a redraw requested, while holding a lock, causes a 2nd panic when refreshing the tab.
+                // I can reproduce locking any web_sys object, like the canvas or a `WebGl2RenderingContext`
+                let canvas = window.canvas().unwrap();
+                let mutex = std::sync::Mutex::new(canvas);
+                {
+                    let mut guard = mutex.lock().unwrap();
+                    let _canvas = &mut *guard;
+                    panic!("Simulating a panic in user code!");
+                    // expected: the JS console should only see this panic happen, in the form of an exception
+                    // actual: we see this panic and, when refreshing the tab, for barely 1 second, we see another BorrowMutError panic inside of Winit's code
+                    // (it doesn't happen every time, but most of the times)
+                    // repro steps: just run this code with `cargo run-wasm --example web`, check the JS console, and refresh. If it doesn't happen the 1st time, repeat a couple of times.
                 }
             }
             _ => (),
